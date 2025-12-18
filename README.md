@@ -1,3 +1,4 @@
+SmartSpend - Expense Tracker
 SmartSpend is a modern web application for tracking daily expenses with beautiful visualizations. It helps users monitor spending, categorize expenses, and generate insightful reports - all in a clean, mobile-friendly interface that works on any device.
 
 ✨ Key Features
