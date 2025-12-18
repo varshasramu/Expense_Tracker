@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>💰 SmartSpend - Track Your Expenses</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Add these lines with other script tags -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading">
+        <div class="spinner"></div>
+        <p>Loading your financial dashboard...</p>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+        <div class="logo">
+            <i class="fas fa-chart-line"></i>
+            <h2>SmartSpend</h2>
+        </div>
+        
+        <!-- Mobile Hamburger Menu Button -->
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        
+        <div class="nav-menu">
+            <a href="#quick-add" class="nav-item active" onclick="switchView('quick-add')">
+                <i class="fas fa-bolt"></i>
+                <span>Quick Add</span>
+            </a>
+            <a href="#today" class="nav-item" onclick="switchView('today')">
+                <i class="fas fa-sun"></i>
+                <span>Today's Expenses</span>
+            </a>
+            <a href="#monthly" class="nav-item" onclick="switchView('monthly')">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Monthly View</span>
+            </a>
+            <a href="#reports" class="nav-item" onclick="switchView('reports')">
+                <i class="fas fa-chart-pie"></i>
+                <span>Reports</span>
+            </a>
+        </div>
+        
+        <div class="user-section">
+            <div class="user-info">
+                <div class="avatar">U</div>
+                <div>
+                    <h4>Welcome Back!</h4>
+                    <p>Track your expenses today</p>
+                </div>
+            </div>
+            
+            <!-- Export Dropdown -->
+            <div class="export-dropdown">
+                <button class="btn-logout" onclick="toggleExportMenu()">
+                    <i class="fas fa-file-export"></i> Export
+                </button>
+                <div class="export-menu" id="export-menu">
+                    <button onclick="exportTodayPDF()">
+                        <i class="fas fa-file-pdf"></i> Export Today's Report (PDF)
+                    </button>
+                    <button onclick="exportMonthPDF()">
+                        <i class="fas fa-calendar-alt"></i> Export Monthly Report (PDF)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay" id="mobile-menu-overlay">
+        <button class="close-mobile-menu" onclick="closeMobileMenu()">
+            <i class="fas fa-times"></i>
+        </button>
+        
+        <a href="#quick-add" class="mobile-nav-item active" onclick="switchViewMobile('quick-add')">
+            <i class="fas fa-bolt"></i>
+            <span>Quick Add</span>
+        </a>
+        <a href="#today" class="mobile-nav-item" onclick="switchViewMobile('today')">
+            <i class="fas fa-sun"></i>
+            <span>Today's Expenses</span>
+        </a>
+        <a href="#monthly" class="mobile-nav-item" onclick="switchViewMobile('monthly')">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Monthly View</span>
+        </a>
+        <a href="#reports" class="mobile-nav-item" onclick="switchViewMobile('reports')">
+            <i class="fas fa-chart-pie"></i>
+            <span>Reports</span>
+        </a>
+        <div class="mobile-user-section">
+            <button class="mobile-nav-item" onclick="toggleExportMenu()" style="border: none; background: none;">
+                <i class="fas fa-file-export"></i>
+                <span>Export Data</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div class="date-display">
+                <h1 id="current-date">Today, <span id="today-date">Loading...</span></h1>
+                <p id="greeting">Ready to track your expenses?</p>
+            </div>
+            
+            <div class="quick-stats">
+                <div class="stat-box today">
+                    <i class="fas fa-wallet"></i>
+                    <div>
+                        <span class="stat-label">Today's Total</span>
+                        <span class="stat-value" id="today-total">$0.00</span>
+                    </div>
+                </div>
+                <div class="stat-box month">
+                    <i class="fas fa-calendar"></i>
+                    <div>
+                        <span class="stat-label">This Month</span>
+                        <span class="stat-value" id="month-total">$0.00</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- View Container -->
+        <div class="view-container">
+            <!-- QUICK ADD VIEW -->
+            <div id="quick-add-view" class="view active">
+                <div class="card full-card">
+                    <h2><i class="fas fa-bolt"></i> Quick Add Expense</h2>
+                    <p class="subtitle">Add expenses quickly as you spend</p>
+                    
+                    <div class="quick-add-form">
+                        <div class="form-group">
+                            <label for="qa-amount"><i class="fas fa-dollar-sign"></i> Amount *</label>
+                            <input type="number" id="qa-amount" placeholder="0.00" step="0.01" min="0.01" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label><i class="fas fa-tags"></i> Category *</label>
+                            <div class="category-selector-grid" id="quick-category-buttons">
+                                <!-- Categories loaded by JavaScript -->
+                                <div class="loading-categories">Loading categories...</div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="qa-description"><i class="fas fa-sticky-note"></i> Description *</label>
+                            <input type="text" id="qa-description" placeholder="What did you buy?">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="qa-date"><i class="fas fa-calendar"></i> Date</label>
+                            <input type="date" id="qa-date" value="">
+                        </div>
+
+                        <div class="form-actions">
+                            <button class="btn-secondary" onclick="clearQuickAddForm()">
+                                <i class="fas fa-times"></i> Clear
+                            </button>
+                            <button class="btn-primary" onclick="saveQuickExpense()">
+                                <i class="fas fa-save"></i> Save Expense
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TODAY'S EXPENSES VIEW -->
+            <div id="today-view" class="view">
+                <div class="card full-card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-sun"></i> Today's Expenses</h2>
+                        <span class="today-date-display" id="today-date-display"></span>
+                    </div>
+
+                    <div class="today-daily-summary">
+                        <div class="daily-stat-card">
+                            <div class="daily-stat-icon">
+                                <i class="fas fa-money-bill-wave"></i>
+                            </div>
+                            <div class="daily-stat-info">
+                                <span class="stat-label">Total Spent Today</span>
+                                <span class="stat-value" id="today-full-total">$0.00</span>
+                            </div>
+                        </div>
+                        <div class="daily-stat-card">
+                            <div class="daily-stat-icon">
+                                <i class="fas fa-list"></i>
+                            </div>
+                            <div class="daily-stat-info">
+                                <span class="stat-label">Number of Expenses</span>
+                                <span class="stat-value" id="today-full-count">0</span>
+                            </div>
+                        </div>
+                        <div class="daily-stat-card">
+                            <div class="daily-stat-icon">
+                                <i class="fas fa-chart-pie"></i>
+                            </div>
+                            <div class="daily-stat-info">
+                                <span class="stat-label">Categories Used</span>
+                                <span class="stat-value" id="today-categories-count">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="today-expenses-full-list" id="today-expenses-full-list">
+                        <!-- Today's expenses loaded here -->
+                        <div class="empty-state">
+                            <i class="fas fa-sun fa-3x"></i>
+                            <h3>No expenses today</h3>
+                            <p>Add your first expense using Quick Add!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MONTHLY VIEW -->
+            <div id="monthly-view" class="view">
+                <div class="card full-card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-calendar-alt"></i> All 12 Months</h2>
+                        <div class="year-selector">
+                            <button class="btn-icon" onclick="prevMonthlyYear()">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <h3 id="monthly-year">2024</h3>
+                            <button class="btn-icon" onclick="nextMonthlyYear()">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Year Summary -->
+                    <div class="year-summary">
+                        <div class="year-total">
+                            <span class="label">Year Total</span>
+                            <span class="value" id="year-total-amount">$0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- 12 Months Grid -->
+                    <div class="months-grid" id="months-grid">
+                        <!-- Months loaded here -->
+                        <div class="loading-months">Loading months...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REPORTS VIEW -->
+            <div id="reports-view" class="view">
+                <div class="card full-card">
+                    <h2><i class="fas fa-chart-pie"></i> Expense Reports</h2>
+                    <p class="subtitle">Analyze your spending patterns</p>
+
+                    <div class="report-controls">
+                        <select id="report-type" onchange="updateReport()">
+                            <option value="category">Category Breakdown</option>
+                            <option value="monthly">Monthly Trends</option>
+                            <option value="daily">Daily Spending</option>
+                        </select>
+                        
+                        <select id="report-period" onchange="updateReport()">
+                            <option value="current-month">Current Month</option>
+                            <option value="last-month">Last Month</option>
+                            <option value="current-year">Current Year</option>
+                            <option value="all">All Time</option>
+                        </select>
+                    </div>
+
+                    <div class="report-content">
+                        <div class="report-chart-container">
+                            <canvas id="reportChart"></canvas>
+                        </div>
+                        
+                        <div class="report-stats" id="report-stats">
+                            <!-- Report statistics will be shown here -->
+                            <div class="empty-stats">
+                                <p>Select a report type to see statistics</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CATEGORIES VIEW (Hidden but kept in DOM for functionality) -->
+            <div id="categories-view" class="view" style="display: none;">
+                <div class="card full-card">
+                    <h2><i class="fas fa-tags"></i> Manage Categories</h2>
+                    <p class="subtitle">Customize your expense categories</p>
+
+                    <div class="categories-management">
+                        <div class="all-categories-list">
+                            <h3><i class="fas fa-list"></i> All Categories</h3>
+                            <div class="categories-grid" id="all-categories-list">
+                                <!-- All categories will be shown here -->
+                                <div class="loading-categories">Loading categories...</div>
+                            </div>
+                        </div>
+
+                        <div class="add-category-section">
+                            <h3><i class="fas fa-plus-circle"></i> Add New Category</h3>
+                            <div class="add-category-form">
+                                <input type="text" id="new-category-name" placeholder="Category name (e.g., Fitness)">
+                                <input type="color" id="new-category-color" value="#4361ee" title="Choose color">
+                                <button class="btn-primary" onclick="addCustomCategory()">
+                                    <i class="fas fa-plus"></i> Add Category
+                                </button>
+                            </div>
+                            <p class="help-text">Custom categories will appear in your quick add menu</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Scripts -->
+    <script src="data.js"></script>
+    <script src="category-manager.js"></script>
+    <script src="reports.js"></script>
+    <script src="app.js"></script>
+    
+    <script>
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mobile-specific fixes
+            // Prevent 300ms delay on touch devices
+            if ('ontouchstart' in window) {
+                document.documentElement.style.touchAction = 'manipulation';
+            }
+            
+            // Fix for iOS viewport height
+            function setVH() {
+                let vh = window.innerHeight * 0.01;
+                document.documentElement.style.setProperty('--vh', `${vh}px`);
+            }
+            
+            setVH();
+            window.addEventListener('resize', setVH);
+            window.addEventListener('orientationchange', setVH);
+            
+            // Prevent pull-to-refresh on mobile
+            document.body.style.overscrollBehaviorY = 'contain';
+            
+            // Fix for iOS safari 100vh issue
+            if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
+                document.documentElement.style.height = '100%';
+                document.body.style.height = '100%';
+            }
+            
+            // Hide loading screen and initialize app
+            setTimeout(() => {
+                document.getElementById('loading').style.display = 'none';
+                if (typeof initApp === 'function') {
+                    initApp();
+                }
+            }, 1000);
+        });
+        
+        // Set today's date in the date picker
+        window.addEventListener('load', function() {
+            const today = new Date();
+            const dateString = today.toISOString().split('T')[0];
+            const dateInput = document.getElementById('qa-date');
+            if (dateInput && !dateInput.value) {
+                dateInput.value = dateString;
+            }
+        });
+        
+        // Add CSS variable for mobile height
+        const style = document.createElement('style');
+        style.textContent = `
+            :root {
+                --vh: 1vh;
+            }
+            
+            .full-card {
+                min-height: calc(var(--vh, 1vh) * 100 - 200px) !important;
+            }
+            
+            @media (max-width: 600px) {
+                .main-content {
+                    min-height: calc(var(--vh, 1vh) * 100 - 80px) !important;
+                }
+                
+                /* Hide categories view on mobile */
+                #categories-view {
+                    display: none !important;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
